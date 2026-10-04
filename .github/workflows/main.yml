@@ -1,0 +1,42 @@
+name: AvicaRDP
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 */6 * * *' # Corrected cron format to run every 6 hours
+
+jobs:
+  build:
+    name: Start Building...
+    runs-on: windows-latest
+    timeout-minutes: 360 # Increased time limit (Max GitHub limit is 360)
+
+    steps:
+      - name: Direct Avica Setup
+        shell: powershell
+        run: |
+          Write-Host "Starting Avica setup directly..." -ForegroundColor Green
+          
+          # Download files directly
+          Invoke-WebRequest -Uri "https://gitlab.com/userup988/my-rdp/-/raw/main/setup.py" -OutFile "setup.py"
+          Invoke-WebRequest -Uri "https://avica.com" -OutFile "Avica_setup.exe"
+          Invoke-WebRequest -Uri "https://gitlab.com/userup988/my-rdp/-/raw/main/show.bat" -OutFile "show.bat"
+          Invoke-WebRequest -Uri "https://gitlab.com" -OutFile "Loop.bat"
+          
+          # Install Python packages
+          pip install requests pyautogui telegraph
+          
+          # Enable RDP
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+          
+          # Set user password (Assuming user is 'runneradmin')
+          net user runneradmin TheDisala
+          
+          # Start Avica installation / process
+          Write-Host "Starting Avica..." -ForegroundColor Yellow
+          Start-Process -FilePath "Avica_setup.exe" -ArgumentList "/S" -Wait
+          
+          # Run automation script
+          python setup.py
+          
